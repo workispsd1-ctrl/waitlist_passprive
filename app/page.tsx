@@ -42,6 +42,33 @@ export default function Home() {
     return () => cancelAnimationFrame(raf);
   }, [claimed]);
 
+  /* live count — read the real number of sign-ups (sheet rows) on load.
+     Google Apps Script sends no CORS headers, so we use JSONP (a <script>
+     tag) instead of fetch. The doGet handler must return
+     `callback({ count: <rows> })` — see the Apps Script snippet in the repo. */
+  useEffect(() => {
+    if (!CONFIG.waitlistEndpoint) return;
+    const cbName = `__waitlistCount_${Date.now()}`;
+    const script = document.createElement("script");
+    const cleanup = () => {
+      delete (window as unknown as Record<string, unknown>)[cbName];
+      script.remove();
+    };
+    (window as unknown as Record<string, unknown>)[cbName] = (data: {
+      count?: number;
+    }) => {
+      if (data && typeof data.count === "number") {
+        setClaimed(Math.min(data.count, CONFIG.spotsTotal));
+      }
+      cleanup();
+    };
+    const sep = CONFIG.waitlistEndpoint.includes("?") ? "&" : "?";
+    script.src = `${CONFIG.waitlistEndpoint}${sep}action=count&callback=${cbName}`;
+    script.onerror = cleanup;
+    document.body.appendChild(script);
+    return cleanup;
+  }, []);
+
   /* sticky mobile CTA — appears once the hero form scrolls out of view */
   useEffect(() => {
     const el = claimRef.current;
