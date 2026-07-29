@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { newEventId, trackLead } from "./meta-events";
+
 /* =====================================================================
    CONFIG — set these to REAL numbers before running ads.
    The scarcity meter must reflect actual sign-ups to stay honest
@@ -136,6 +138,26 @@ export default function Home({ initialClaimed }: { initialClaimed: number }) {
       ts: new Date().toISOString(),
     };
 
+    /* Conversion. Fired before the network call so a visitor who closes the
+       tab mid-submit is still counted. The id is shared with the server-side
+       Conversions API call so Meta dedupes the two reports into one Lead. */
+    const eventId = newEventId();
+    trackLead(eventId);
+
+    /* Server-side half of the same Lead, for the visitors whose browser call
+       never reaches Meta (ad blockers, ITP, Safari). Fire-and-forget: the
+       sign-up must never wait on, or fail because of, ad tracking. */
+    void fetch("/api/meta-capi", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eventId,
+        email: trimmedEmail,
+        phone: payload.phone,
+        eventSourceUrl: window.location.href,
+      }),
+    }).catch(() => {});
+
     if (CONFIG.waitlistEndpoint) {
       try {
         // Google Apps Script doesn't send CORS headers, so use a "simple"
@@ -153,9 +175,6 @@ export default function Home({ initialClaimed }: { initialClaimed: number }) {
     } else {
       console.log("Waitlist signup (no endpoint configured):", payload);
     }
-
-    /* fire your ad pixel conversion event here, e.g.:
-       fbq('track','Lead');  gtag('event','generate_lead');  ttq.track('SubmitForm'); */
 
     // Count this sign-up: bumps "passes claimed" and re-animates the meter.
     setClaimed((c) => Math.min(c + 1, CONFIG.spotsTotal));
