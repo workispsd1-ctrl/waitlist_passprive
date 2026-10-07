@@ -228,10 +228,7 @@ export default function Home({ initialClaimed }: { initialClaimed: number }) {
             <span className="stamp">Waitlist exclusive</span>
             <div className="pass">
               <div className="pass-top">
-                <div className="pass-kicker">
-                  <span className="pass-brand">PassPrivé</span>
-                  <span className="pass-badge">Founding member</span>
-                </div>
+                
                 <div className="pass-name">Privé Starter</div>
                 <div className="pass-value">
                   <s>999 MUR / year</s>
@@ -599,7 +596,7 @@ export default function Home({ initialClaimed }: { initialClaimed: number }) {
         <div className="final">
           <h2>The free passes won&apos;t wait.</h2>
           <p>
-            1,000 founding-member spots. One mobile number. The best of
+            First 1000 members spots. One mobile number. The best of
             Mauritius, unlocked before everyone else.
           </p>
           <a className="cta" href="#claim">
